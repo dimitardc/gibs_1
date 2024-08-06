@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>GIBS OpenLayers Vector interaction Example</title>
+    <link rel='stylesheet' href='../../lib/openlayers-7.2.2/ol.css' />
+    <link rel='stylesheet' href='../css/time.css' />
+    <meta charset="UTF-8">
+    <script src='../../lib/openlayers-7.2.2/ol.js'></script>
+    <script src='my_map.js'></script>
+</head>
+
+<body>
+    <div id='map'><pre id="info"></pre></div>
+    <div id='day-panel'>
+        <div id='day-label'></div>
+        <input class="slider" id="day-slider" type="range" min="-21" max="0" value="0">
+    </div>
+    <div id='layer-panel'>
+        <label for="layer-select">Select Layer:</label>
+        <input class="search-bar" type="text" id="layer-search" placeholder="Search...">
+        <select id="layer-select"></select>
+    </div>
+    <div id="legend-container"></div>
+    <button class="btn" id="download-button" style="display: none;">Download</button>
+
+    <div id="coordinates-panel">
+        <label for="lonmin">Lon Min:</label>
+        <input type="text" id="lonmin" name="lonmin">
+        <label for="latmin">Lat Min:</label>
+        <input type="text" id="latmin" name="latmin">
+        <label for="lonmax">Lon Max:</label>
+        <input type="text" id="lonmax" name="lonmax">
+        <label for="latmax">Lat Max:</label>
+        <input type="text" id="latmax" name="latmax"> 
+        <button class="btn" id="view-button">View</button>
+        <button class="btn" id="clear-button">Clear</button>
+    </div>
+
+    <div id="time-extents-icon">
+        <button id="time-button">Time Extents</button>
+        <div id="time-extents-list"></div>
+    </div>
+
+    <div id="date-panel">
+        <label for="start-date">Start Date:</label>
+        <input type="date" id="start-date" name="start-date">
+        <label for="end-date">End Date:</label>
+        <input type="date" id="end-date" name="end-date">
+    </div>
+
+    <div id="download-panel"></div>
+
+    <div id="finished-panel"></div>
+
+    <div id="missing-panel"></div>
+</body>
+
+</html>

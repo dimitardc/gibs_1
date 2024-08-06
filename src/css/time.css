@@ -1,0 +1,331 @@
+
+#download-panel {
+  position: fixed;
+  top: 12px; /* Adjust as needed */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  display: none;
+}
+
+#finished-panel {
+  position: fixed;
+  top: 12px; /* Adjust as needed */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  display: none;
+}
+
+#missing-panel {
+  position: fixed;
+  top: 12px; /* Adjust as needed */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #f02a07;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  display: none;
+}
+
+#layer-panel {
+  position: absolute;
+  left: 1em;
+  bottom: calc(2em + 80px); 
+  padding:  10px; 
+  background-color: rgba(40, 40, 40, 0.8);
+  border-radius: 5px;
+  border: 1px solid rgb(200, 200, 200);
+  z-index: 5; 
+  width: 30%; 
+}
+
+
+#layer-panel label {
+  color: white; 
+}
+
+#layer-select {
+  width: 100%;
+  padding: 0.5em; 
+  border-radius: 3px; 
+  font-size: 80%; 
+}
+
+
+.slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.9;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px; 
+    height: 25px; 
+    border: 0;
+    background: url('earthcareai_logo.png') no-repeat center;
+    background-size: contain;
+    cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+    width: 25px; 
+    height: 25px; 
+    border: 0;
+    background: url('earthcareai_logo.png') no-repeat center;
+    background-size: contain;
+    cursor: pointer;
+}
+
+
+#day-label {
+  font: 400 16px "helvetica", sans-serif;
+  left: 1em;
+  bottom: 1em;
+  color: rgb(200, 200, 200);
+  width: 100%;
+  text-align: center;
+  padding-bottom: 0.5em;
+}
+
+#day-panel {
+  position: absolute;
+  left: 1em;
+  bottom: 1em;
+  padding: 1em;
+  background-color: rgba(40, 40, 40, 0.8);
+  border-radius: 5px;
+  border: 1px solid rgb(200, 200, 200);
+  width: 60%;
+}
+
+
+#info {
+  z-index: 1;
+  opacity: 0;
+  position: absolute;
+  top: 1px; 
+  left: 1px; 
+  margin: 0;
+  background: rgba(0,60,136,0.7);
+  color: white;
+  border: 0;
+  transition: opacity 100ms ease-in;
+}
+
+#legend-container {
+  position: absolute;
+  bottom: 1em; 
+  right: 1em; 
+  z-index: 10; 
+  background-color: white; 
+  border-radius: 3px; 
+}
+
+#map {
+  background-color: #000;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ol-zoom button {
+  background: rgba(40, 40, 40, 0.8);
+}
+
+.ol-zoom button:hover {
+  background: rgb(255, 255, 255);
+  color: rgb(40, 40, 40);
+}
+
+.ol-attribution {
+  display: none;
+}
+
+#attribution {
+  position: absolute;
+  bottom: 1em;
+  right: 1em;
+  padding: 1em;
+  background: rgba(40, 40, 40, 0.8);
+  border: 1px solid rgb(200, 200, 200);
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+#attribution a {
+  font: 400 14px "helvetica", sans-serif;
+  padding: 0 0.75em;
+  color: rgb(200, 200, 200);
+}
+
+#attribution a:hover {
+  color: rgb(255, 255, 255);
+}
+
+#download-button {
+  position: fixed;
+  left: 17px; /* Adjust this value to move the button further or closer to the left edge */
+  bottom: 200px;
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+#download-button:hover {
+  background-color: #45a049;
+}
+
+#view-button {
+  margin-top: 10px; /* Add margin to create space between the button and the last text input */
+  position: relative; /* Change position to relative */
+  padding: 5px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+#view-button:hover {
+  background-color: #45a049;
+}
+
+#coordinates-panel {
+  position: absolute;
+  right: 0.5em; /* Adjust right value */
+  top: 160px; /* Adjust top value to position vertically */
+  transform: translateY(-50%);
+  padding: 10px;
+  background-color: rgba(40, 40, 40, 0.8);
+  border-radius: 5px;
+  border: 1px solid rgb(200, 200, 200);
+  z-index: 5;
+  width: 100px; /* Adjust width as needed */
+}
+
+#coordinates-panel label {
+  color: white;
+  display: block;
+}
+
+#coordinates-panel input[type="text"] {
+  width: 80%;
+  padding: 0.5em;
+  border-radius: 3px;
+  font-size: 80%;
+  margin-bottom: 5px;
+}
+
+#time-extents-icon {
+  position: relative;
+  display: inline-block;
+}
+
+#time-button {
+  position: fixed;
+  left: 1.35%;
+  top: 52%;
+  transform: translateY(-50%);
+  padding: 5px 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+  z-index: 103;
+}
+
+#time-extents-list {
+  display: none;
+  position: absolute;
+  top: calc(-100% - 5px); /* Position above the button */
+  left: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 5px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 102;
+  width: 250px;
+}
+
+#time-button:focus + #time-extents-list {
+  display: block;
+  z-index: 103;
+}
+
+#date-panel {
+  position: absolute;
+  right: 140px; /* Adjust to position 200px from the right */
+  top: 2px; /* Adjust top value */
+  padding: 10px;
+  background-color: rgba(40, 40, 40, 0.8);
+  border-radius: 5px;
+  border: 1px solid rgb(200, 200, 200);
+  z-index: 5;
+  width: 120px; /* Adjust width as needed */
+}
+
+#date-panel label {
+  color: white;
+  display: block;
+  margin-bottom: 5px; /* Add margin between labels */
+}
+
+#date-panel input[type="date"] {
+  width: calc(100% - 20px); /* Adjust input width */
+  padding: 0.5em;
+  border-radius: 3px;
+  font-size: 80%;
+  margin-bottom: 10px; /* Add margin between inputs */
+}
+
+.search-bar {
+  margin-bottom: 5px;
+}
+
+#clear-button {
+  margin-top: 10px; /* Add margin to create space between the button and the last text input */
+  position: relative; /* Change position to relative */
+  padding: 5px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+#clear-button:hover {
+  background-color: #45a049;
+}
+
