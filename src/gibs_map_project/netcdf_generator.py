@@ -1,199 +1,245 @@
 import os
-import shutil
 from flask import Flask, request
 from flask_cors import CORS
 import requests
 import pandas as pd
 import xml.etree.ElementTree as ET
 from PIL import Image
-from netCDF4 import Dataset
 import xarray as xr
 from owslib.wms import WebMapService
 from tqdm import tqdm
 
-DATA_DIRECTORY = '../../data/'
-DATE_FORMAT = '%Y-%m-%d'
+# ------------------------------
+# PATHS
+# ------------------------------
+DATA_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data"))
+IMAGES_DIRECTORY = os.path.join(DATA_DIRECTORY, "images")
+DATE_FORMAT = "%Y-%m-%d"
 
+# Make sure image directory exists
+os.makedirs(IMAGES_DIRECTORY, exist_ok=True)
+
+# ------------------------------
+# FLASK APP
+# ------------------------------
 app = Flask(__name__)
 CORS(app)
 
+# ------------------------------
+# XML DOWNLOAD
+# ------------------------------
 def download_xml(metadata_href):
     try:
         response = requests.get(metadata_href)
         if response.status_code == 200:
             filename = os.path.basename(metadata_href)
-            with open(os.path.join(DATA_DIRECTORY, filename), 'wb') as f:
+            xml_path = os.path.join(DATA_DIRECTORY, filename)
+
+            with open(xml_path, "wb") as f:
                 f.write(response.content)
+
             return filename
         else:
             print(f"Failed to download XML from {metadata_href}")
             return None
+
     except Exception as e:
-        print(f"Error downloading XML from {metadata_href}: {e}")
+        print(f"Error downloading XML: {e}")
         return None
 
-@app.route('/save_data', methods=['OPTIONS'])
+
+# ------------------------------
+# CORS PRE-FLIGHT
+# ------------------------------
+@app.route("/save_data", methods=["OPTIONS"])
 def handle_options():
     headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST',
-        'Access-Control-Allow-Headers': 'Content-Type'
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST",
+        "Access-Control-Allow-Headers": "Content-Type",
     }
-    return ('', 204, headers)
+    return ("", 204, headers)
 
 
-@app.route('/save_data', methods=['POST'])
+# ------------------------------
+# MAIN PROCESSING ROUTE
+# ------------------------------
+@app.route("/save_data", methods=["POST"])
 def save_data():
     data = request.json
 
-    layer = data.get('layer')
-    start_date = data.get('startDate')
-    end_date = data.get('endDate')
-    lonmin = float(data.get('lonmin'))
-    latmin = float(data.get('latmin'))
-    lonmax = float(data.get('lonmax'))
-    latmax = float(data.get('latmax'))
-    metadata_href = data.get('metadataHref')  
+    layer = data.get("layer")
+    start_date = data.get("startDate")
+    end_date = data.get("endDate")
+    lonmin = float(data.get("lonmin"))
+    latmin = float(data.get("latmin"))
+    lonmax = float(data.get("lonmax"))
+    latmax = float(data.get("latmax"))
+    metadata_href = data.get("metadataHref")
 
-    print(layer)
-    print(start_date)
-    print(end_date)
-    print(lonmin)
-    print(latmin)
-    print(lonmax)
-    print(latmax)
-    print(metadata_href)
+    print(layer, start_date, end_date, lonmin, latmin, lonmax, latmax, metadata_href)
+
+    # ------------------------------
+    # DOWNLOAD XML
+    # ------------------------------
     xml_filename = download_xml(metadata_href)
-
     if xml_filename is None:
-        return 'Failed to download XML file', 500
+        return "Failed to download XML", 500
 
-    wms = WebMapService('https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?', version='1.1.1')
+    xml_path = os.path.join(DATA_DIRECTORY, xml_filename)
 
-    time_range = pd.date_range(start=start_date, end=end_date, freq='D')
+    # ------------------------------
+    # GET WMS CLIENT
+    # ------------------------------
+    wms = WebMapService(
+        "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?", version="1.1.1"
+    )
 
-    pbar_images = tqdm(total=len(time_range), desc='Downloading images')
+    # ------------------------------
+    # DOWNLOAD IMAGES
+    # ------------------------------
+    time_range = pd.date_range(start=start_date, end=end_date, freq="D")
+    pbar_images = tqdm(total=len(time_range), desc="Downloading images")
 
     for time_value in time_range:
         time_str = time_value.strftime(DATE_FORMAT)
-        
-        img = wms.getmap(layers=[layer],
-                         srs='epsg:4326',
-                         bbox=(lonmin,latmin,lonmax,latmax),
-                         size=(2000*1,2000*1),
-                         time=time_str,
-                         format='image/png',
-                         transparent=True)
-        
-        filename = f'image_{layer}_{time_str}.png'
-        with open(DATA_DIRECTORY + "/images/" + filename, 'wb') as file:
-            file.write(img.read())
-        pbar_images.update(1)  
 
-    pbar_images.close()  
+        img = wms.getmap(
+            layers=[layer],
+            srs="epsg:4326",
+            bbox=(lonmin, latmin, lonmax, latmax),
+            size=(2000, 2000),
+            time=time_str,
+            format="image/png",
+            transparent=True,
+        )
 
-    xml_path = os.path.join(DATA_DIRECTORY, xml_filename)
+        filename = f"image_{layer}_{time_str}.png"
+        image_path = os.path.join(IMAGES_DIRECTORY, filename)
+
+        with open(image_path, "wb") as f:
+            f.write(img.read())
+
+        pbar_images.update(1)
+
+    pbar_images.close()
+
+    # ------------------------------
+    # PARSE XML COLORMAP
+    # ------------------------------
     tree = ET.parse(xml_path)
     root = tree.getroot()
 
     title = None
     units = "no unit available"
 
-    color_map_elements = root.findall('.//ColorMap')
-
+    color_map_elements = root.findall(".//ColorMap")
     if len(color_map_elements) >= 2:
-        second_color_map_element = color_map_elements[1]
-        title = second_color_map_element.attrib.get('title')
-        units = second_color_map_element.attrib.get('units', "no unit available")
+        second_cm = color_map_elements[1]
+        title = second_cm.attrib.get("title")
+        units = second_cm.attrib.get("units", "no unit available")
 
     print("Title:", title)
     print("Units:", units)
 
-    # Mapping RGB values to ColorMapEntry values
+    # Map RGB to value
     color_map = {}
-    for entry in root.findall('.//ColorMapEntry'):
-        rgb = tuple(map(int, entry.attrib['rgb'].split(',')))
-        if entry.attrib.get('nodata') == 'true':
-            continue  
-        value_str = entry.attrib.get('value')
-        if value_str is not None:
-            value_range = value_str.strip('[]()').split(',')
-            if len(value_range) == 1:
-                value = float(value_range[0])
+    for entry in root.findall(".//ColorMapEntry"):
+        rgb = tuple(map(int, entry.attrib["rgb"].split(",")))
+
+        if entry.attrib.get("nodata") == "true":
+            continue
+
+        value_str = entry.attrib.get("value")
+        if value_str:
+            rng = value_str.strip("[]()").split(",")
+            if len(rng) == 1:
+                value = float(rng[0])
             else:
-                # Handle cases with positive or negative infinity
-                if value_range[0] == '-INF':
-                    value = float(value_range[1])
-                elif value_range[1] == '+INF':
-                    value = float(value_range[0])
+                if rng[0] == "-INF":
+                    value = float(rng[1])
+                elif rng[1] == "+INF":
+                    value = float(rng[0])
                 else:
-                    value = (float(value_range[0]) + float(value_range[1])) / 2
+                    value = (float(rng[0]) + float(rng[1])) / 2
+
             color_map[rgb] = value
         else:
             color_map[rgb] = None
 
+    # ------------------------------
+    # PROCESS IMAGES → DATAFRAME
+    # ------------------------------
     df_list = []
 
-    bounding_box = (lonmin,latmin,lonmax,latmax)
+    bounding_box = (lonmin, latmin, lonmax, latmax)
+    image_files = [f for f in os.listdir(IMAGES_DIRECTORY) if f.endswith(".png")]
+    pbar_proc = tqdm(total=len(image_files), desc="Processing images")
 
-    image_dir = DATA_DIRECTORY + "images"  
+    for filename in image_files:
+        image_path = os.path.join(IMAGES_DIRECTORY, filename)
+        image = Image.open(image_path)
+        pixels = image.load()
+        width, height = image.size
 
-    pbar_processing = tqdm(total=len(os.listdir(image_dir)), desc='Processing images')
+        date_str = filename.split("_")[-1].split(".")[0]
 
-    for filename in os.listdir(image_dir):
-        if filename.endswith(".png"):
-            # Read the downloaded image
-            image_path = os.path.join(image_dir, filename)
-            image = Image.open(image_path)
-            pixels = image.load()
-            width, height = image.size
+        pixel_size_x = (lonmax - lonmin) / width
+        pixel_size_y = (latmax - latmin) / height
 
-            date_str = filename.split('_')[-1].split('.')[0]  # Extract the date part
+        rows = []
+        for y in range(height):
+            for x in range(width):
+                rgb = pixels[x, y][:3]
+                if rgb in color_map:
+                    value = color_map[rgb]
+                    lon = lonmin + (x * pixel_size_x)
+                    lat = latmax - (y * pixel_size_y)
+                    rows.append(
+                        {
+                            "latitude": lat,
+                            "longitude": lon,
+                            "time": date_str + " 00:00:00",
+                            "value": value,
+                        }
+                    )
 
-            pixel_size_x = (bounding_box[2] - bounding_box[0]) / width
-            pixel_size_y = (bounding_box[3] - bounding_box[1]) / height
+        df_list.append(pd.DataFrame(rows))
+        pbar_proc.update(1)
 
-            data = []
+    pbar_proc.close()
 
-            for y in range(height):
-                for x in range(width):
-                    rgb = pixels[x, y][:3]  # Extract RGB values
-                    if rgb in color_map:
-                        value = color_map[rgb]
-                        longitude = bounding_box[0] + (x * pixel_size_x)
-                        latitude = bounding_box[3] - (y * pixel_size_y)
-                        data.append({'latitude': latitude, 'longitude': longitude, 'time': date_str + ' 00:00:00', 'value': value})
-            
-            # Convert data to DataFrame and append to list
-            df_list.append(pd.DataFrame(data))
-            pbar_processing.update(1)  
-
-    pbar_processing.close()  
-
-    # Concatenate all DataFrames in the list
     df = pd.concat(df_list, ignore_index=True)
 
-    nc_filename = DATA_DIRECTORY + "output.nc"
-    ds = xr.Dataset.from_dataframe(df.set_index(['latitude', 'longitude', 'time']))
-    
-    ds['value'].attrs['units'] = units
-    ds['value'].attrs['long_name'] = title
-    
-    ds.to_netcdf(nc_filename)
-    print("===================================")
-    print("|NetCDF file created successfully.|")
-    print("===================================")
+    # ------------------------------
+    # WRITE NETCDF
+    # ------------------------------
+    nc_path = os.path.join(DATA_DIRECTORY, "output.nc")
+    ds = xr.Dataset.from_dataframe(df.set_index(["latitude", "longitude", "time"]))
 
-    if os.path.exists(os.path.join(DATA_DIRECTORY, xml_filename)):
-        os.remove(os.path.join(DATA_DIRECTORY, xml_filename))
+    ds["value"].attrs["units"] = units
+    ds["value"].attrs["long_name"] = title
 
-    images_dir = os.path.join(DATA_DIRECTORY, "images")
-    for filename in os.listdir(images_dir):
-        file_path = os.path.join(images_dir, filename)
-        if os.path.isfile(file_path) and filename.endswith(".png"):
-            os.remove(file_path)
+    ds.to_netcdf(nc_path)
 
-    return 'Data processed and saved successfully'
+    print("====================================")
+    print("| NetCDF file created successfully |")
+    print("====================================")
 
-if __name__ == '__main__':
+    # ------------------------------
+    # CLEANUP XML + IMAGES
+    # ------------------------------
+    if os.path.exists(xml_path):
+        os.remove(xml_path)
+
+    for f in image_files:
+        os.remove(os.path.join(IMAGES_DIRECTORY, f))
+
+    return "Data processed and saved successfully"
+
+
+# ------------------------------
+# FLASK ENTRY POINT
+# ------------------------------
+if __name__ == "__main__":
     app.run(debug=True, port=5000)
